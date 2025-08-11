@@ -1,2 +1,0 @@
-# PumpkinParty
-Pumpkin Birthday Bash

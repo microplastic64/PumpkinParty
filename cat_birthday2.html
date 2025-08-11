@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">    
+<meta charset="UTF-8">
+<title>Happy Birthday, Pumpkin!</title>
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        text-align: center;
+        background: url("pumpfkin.png") no-repeat center center/cover;
+        min-height: 100vh;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+    h1 {
+        font-size: 4em;
+        text-shadow: 3px 3px 8px #000;
+        margin-bottom: 30px;
+        z-index: 10;
+        position: relative;
+    }
+    .action-btn {
+        font-size: 2em;
+        padding: 16px 32px;
+        margin: 12px;
+        border: none;
+        border-radius: 12px;
+        background: #ff94fd;
+        color: #fff;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        transition: opacity 0.3s;
+        z-index: 10;
+        position: relative;
+        /* Make all buttons the same size */
+        min-width: 260px;
+        min-height: 80px;
+        max-width: 260px;
+        max-height: 80px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        white-space: nowrap;
+        text-align: center;
+    }
+    .action-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .bonus-corner {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 20;
+    }
+    video, img {
+        max-width: 80vw;
+        margin-top: 20px;
+    }
+    /* Overlays */
+    .overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        background: rgba(0,0,0,0.8);
+    }
+    #bonusOverlay img,
+    #exerciseOverlay img.bg,
+    #treatOverlay video {
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+        border: none;
+        box-shadow: none;
+        border-radius: 0;
+    }
+    #runGif {
+        display: none;
+        position: absolute;
+        top: 30%;
+        left: 30%;
+        transform: translateY(-50%) scale(2);
+        max-width: 50vw;
+        max-height: 50vh;
+        z-index: 2;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+    }
+</style>
+</head>
+<body>
+
+<h1>🎉 Happy Birthday, Pumpkin! 🎂</h1>
+
+<canvas id="confettiCanvas" style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:0;"></canvas>
+
+<button id="treatBtn" class="action-btn">Give Treat 🍖</button>
+<button id="petBtn" class="action-btn">Pet 🐾</button>
+<button id="bonusBtn" class="action-btn bonus-corner">BONUS 💰</button>
+<button id="exerciseBtn" class="action-btn">Exercise 🏃‍♂️</button>
+
+<audio id="petSound" src="meow.mp3" preload="auto"></audio>
+
+<!-- Treat Overlay: use an image instead of video -->
+<div id="treatOverlay" class="overlay" style="z-index:4000;">
+    <img id="treatGif" src="treat.gif" alt="Treat time!" style="width: 50vh;height:50vh;object-fit:fill;box-shadow:none;border:none;outline:none;background:black;">
+</div>
+<audio id="treatSound" src="treat.mp3" preload="auto"></audio>
+
+<!-- Bonus Overlay -->
+<div id="bonusOverlay" class="overlay" style="z-index:2000;background:rgba(0,0,0,0.7);">
+    <img src="bonus.png" alt="Bonus">
+</div>
+<audio id="bonusSound" src="bonus.mp3" preload="auto"></audio>
+
+<!-- Exercise Overlay -->
+<div id="exerciseOverlay" class="overlay" style="z-index:3000;background:rgba(0,0,0,0.92);flex-direction:column;">
+    <img class="bg" src="exercise.png" alt="Cat on treadmill">
+    <img id="runGif" src="run.gif" alt="Cat running">
+</div>
+<audio id="runSound" src="run.mp3" preload="auto"></audio>
+
+<script>
+// Confetti
+const canvas = document.getElementById('confettiCanvas');
+const ctx = canvas.getContext('2d');
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const colors = ['#ff9800', '#fff176', '#e57373', '#81c784', '#64b5f6', '#f06292', '#ffd54f', '#ba68c8'];
+const confetti = Array.from({length: 80}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * -canvas.height,
+    r: 6 + Math.random() * 6,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    tilt: Math.random() * 20 - 10,
+    tiltAngle: Math.random() * Math.PI * 2,
+    tiltInc: 0.05 + Math.random() * 0.07
+}));
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    confetti.forEach(c => {
+        ctx.beginPath();
+        ctx.lineWidth = c.r;
+        ctx.strokeStyle = c.color;
+        ctx.moveTo(c.x + c.tilt, c.y);
+        ctx.lineTo(c.x + c.tilt, c.y + c.r * 2);
+        ctx.stroke();
+        c.y += 2 + c.r * 0.15;
+        c.tiltAngle += c.tiltInc;
+        c.tilt = Math.sin(c.tiltAngle) * 12;
+        if (c.y > canvas.height + 20) {
+            c.x = Math.random() * canvas.width;
+            c.y = -20;
+        }
+    });
+    requestAnimationFrame(draw);
+}
+draw();
+
+// Cooldown helper
+function startCooldown(button, seconds) {
+    button.disabled = true;
+    button.classList.add("disabled");
+    let remaining = seconds;
+    const originalText = button.dataset.originalText;
+    button.textContent = `${originalText} (${remaining})`;
+    const timer = setInterval(() => {
+        remaining--;
+        if (remaining > 0) {
+            button.textContent = `${originalText} (${remaining})`;
+        } else {
+            clearInterval(timer);
+            button.disabled = false;
+            button.classList.remove("disabled");
+            button.textContent = originalText;
+        }
+    }, 1000);
+}
+document.querySelectorAll(".action-btn").forEach(btn => {
+    btn.dataset.originalText = btn.textContent;
+});
+
+// Elements
+const treatBtn = document.getElementById("treatBtn");
+const treatOverlay = document.getElementById("treatOverlay");
+const treatGif = document.getElementById("treatGif");
+const treatSound = document.getElementById("treatSound");
+const petBtn = document.getElementById("petBtn");
+const bonusBtn = document.getElementById("bonusBtn");
+const exerciseBtn = document.getElementById("exerciseBtn");
+const bonusOverlay = document.getElementById("bonusOverlay");
+const exerciseOverlay = document.getElementById("exerciseOverlay");
+const runGif = document.getElementById("runGif");
+const runSound = document.getElementById("runSound");
+
+// Treat action
+treatBtn.onclick = () => {
+    treatOverlay.style.display = "flex";
+    treatSound.currentTime = 0;
+    treatSound.play();
+    startCooldown(treatBtn, 10);
+    setTimeout(() => {
+        treatOverlay.style.display = "none";
+    }, 3000); // Show GIF for 3 seconds
+};
+
+// Pet action
+petBtn.onclick = () => {
+    petSound.currentTime = 0.325;
+    petSound.play();
+    startCooldown(petBtn, 0);
+};
+
+// Bonus action
+bonusBtn.onclick = () => {
+    bonusOverlay.style.display = "flex";
+    bonusSound.currentTime = 0;
+    bonusSound.play();
+    setTimeout(() => bonusOverlay.style.display = "none", 5000);
+    startCooldown(bonusBtn, 120);
+};
+
+// Exercise action
+exerciseBtn.onclick = () => {
+    exerciseOverlay.style.display = "flex";
+    runGif.style.display = "block";
+    runSound.currentTime = 2;
+    runSound.play();
+    setTimeout(() => {
+        runSound.pause();
+        exerciseOverlay.style.display = "none";
+        runGif.style.display = "none";
+        startCooldown(exerciseBtn, 300);
+    }, 8000);
+};
+</script>
+</body>
+</html>
